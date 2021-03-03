@@ -1,6 +1,6 @@
 from math import *
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 # ------ Constants ---------#
 k = 1.15
@@ -14,7 +14,7 @@ Omega = 30.264 #rad/s
 a = 343
 CdS = 1.65
 vi_hover = 15.06
-V = 0
+V = np.arange(1,82,1)
 #-------- Base calculations ----------#
 sigma = N_blades*c/(pi*R)
 V_tip = Omega*R/60
@@ -23,26 +23,25 @@ mu = V/(Omega*R)
 
 #-------- Main calculations ----------#
 def Powercurves(V):
-    for i in range(0,84):
-        V = V + 1
-        V_bar = V/vi_hover
-        vi_bar = 1/V_bar
-        Pi = k*W*vi_bar*sqrt(W/(2*rho*pi*R**2))
-        Pp = (sigma*C_Dp)/8*rho*(Omega*R)**3*pi*R**2*(1+4.65*mu**2)
-        Ppar = CdS*0.5*rho*V**3
-        Pil.append(Pi)
-        Ppl.append(Pp)
-        Pparl.append(Ppar)
-    return Pil, Ppl, Pparl
+    V_bar = V/vi_hover
+    vi_bar = 1/V_bar
+    Pi = k*W*vi_bar*sqrt(W/(2*rho*pi*R**2))
+    Pp = (sigma*C_Dp)/8*rho*(Omega*R)**3*pi*R**2*(1+4.65*mu**2)
+    Ppar = CdS*0.5*rho*V**3
+    return Pi, Pp, Ppar
 
 Pil = []
 Ppl = []
 Pparl = []
 
-Pil, Ppl, Pparl = Powercurves(V)
+for i in range(len(V)):
+    Pi, Pp, Ppar = Powercurves(V[i])
+    Pil.append(Pi)
+    Ppl.append(Pp)
+    Pparl.append(Ppar)
 
-print(Pil)
+# print(Pil)
 
 
 #-------- Plotting ----------#
-plt.plot(Pil,V)
+plt.plot(V,Pil)
