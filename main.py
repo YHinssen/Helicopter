@@ -18,11 +18,12 @@ V = np.arange(1,100,0.1)
 
 # ------ Constants Tail Rotor---------#
 R_tr = 2.79/2
-l_tr = 
-Omega_tr
-sigma_tr
+c_tr = 0.833 * 0.3048   #m 
+N_tr = 4
+l_tr = 8.998            #m
+Omega_tr = 1530 / 2 / m.pi  #rad/s
+sigma_tr = N_tr*c_tr/(m.pi*R_tr)
 
-mu_tr
 
 #-------- Base calculations ----------#
 sigma = N_blades*c/(m.pi*R)
@@ -40,7 +41,8 @@ def Powercurves(V):
     
     
     T_tr = (Ppar + Pp + Pi)/(Omega * l_tr)
-    vi_bar_tr = 
+    mu_tr = V/(Omega_tr*R_tr)
+    vi_bar_tr = m.sqrt((-(V_bar)**2 / 2) + m.sqrt(((V_bar)**4 / 4) + 1))
     Ptr = k*T_tr*vi_bar_tr*m.sqrt(T_tr/(2*rho*m.pi*R_tr**2)) + (sigma_tr*C_Dp)/8 * rho * ((Omega_tr*R_tr)**3) * m.pi * (R_tr**2) * (1+4.65*(mu_tr**2))
     return Pi, Pp, Ppar, Ptr
 
@@ -60,7 +62,8 @@ for i in range(len(V)):
     
 
 #-------- Plotting ----------#
-fig = plt.figure(1)
+fig = plt.figure(1, figsize=(8,6))
+
 ax = plt.subplot(111)
 ax.plot(V,Pil, label="$P_i$")
 ax.plot(V,Ppl, label="$P_p$")
@@ -75,4 +78,5 @@ plt.grid(True)
 box = ax.get_position()
 ax.set_position([box.x0, box.y0 + box.height * 0.15, box.width, box.height * 0.85])
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fancybox=True, shadow=True, ncol=5)
+plt.title("Power curve of the Boeing AH-64D Apache")
 plt.show
