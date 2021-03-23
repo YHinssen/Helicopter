@@ -27,7 +27,7 @@ sigma_tr = N_tr*c_tr/(m.pi*R_tr)
 
 #-------- Base calculations ----------#
 sigma = N_blades*c/(m.pi*R)
-V_tip = Omega*R/60
+V_tip = Omega*R
 Mach_tip = V_tip/a
 
 #-------- Main calculations ----------#
