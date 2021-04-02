@@ -15,6 +15,7 @@ a = 343
 CdS = 1.65
 vi_hover = 15.06
 V = np.arange(1,100,0.1)
+t = np.linspace(0,(6*m.pi/Omega),200)
 
 # ------ Constants Tail Rotor---------#
 R_tr = 2.79/2
@@ -24,7 +25,10 @@ l_tr = 8.998            #m
 Omega_tr = 1530 / 2 / m.pi  #rad/s
 sigma_tr = N_tr*c_tr/(m.pi*R_tr)
 
-
+# ------ Constants Flapping-----------#
+Cl_alpha = 0.10867
+beta_0 = 0.2
+theta_0 = 12.53/180*m.pi
 #-------- Base calculations ----------#
 sigma = N_blades*c/(m.pi*R)
 V_tip = Omega*R
@@ -60,7 +64,7 @@ for i in range(len(V)):
     Ptrl.append(Ptr/1000)
     Ptotal.append((Pi+Pp+Ppar+Ptr)/1000)
     
-
+"""
 #-------- Plotting ----------#
 fig = plt.figure(1, figsize=(8,6))
 
@@ -79,4 +83,25 @@ box = ax.get_position()
 ax.set_position([box.x0, box.y0 + box.height * 0.15, box.width, box.height * 0.85])
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fancybox=True, shadow=True, ncol=5)
 plt.title("Power curve of the Boeing AH-64D Apache")
+plt.show
+
+"""
+
+##### Flapping
+
+m_blade = (50*3.8 + 10*6.3)*10**(-2) * 4.45 / 0.27 / 9.81 #NASA doc -> [kg]
+i_blade = 1/3*m_blade*R**2
+inflow_r = vi_hover/(Omega*R)
+lock_nr = rho*Cl_alpha*c*R**4/i_blade
+
+beta_par = lock_nr/8*(theta_0-(4*inflow_r)/3)
+
+beta_l = []
+for i in range(len(t)):
+    beta_hom = beta_0 * m.exp(-lock_nr/16*Omega*t[i])*(m.cos(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]) + (lock_nr/16)/m.sqrt(1-(lock_nr/16)**2) * m.sin(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]))
+    beta = beta_hom +beta_par
+    beta_l.append(beta)
+
+fig = plt.figure(2)    
+plt.plot(t,beta_l)
 plt.show
