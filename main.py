@@ -29,6 +29,7 @@ sigma_tr = N_tr*c_tr/(m.pi*R_tr)
 Cl_alpha = 0.10867
 beta_0 = 0.2
 theta_0 = 12.53/180*m.pi
+q = 0 #rotation rate
 #-------- Base calculations ----------#
 sigma = N_blades*c/(m.pi*R)
 V_tip = Omega*R
@@ -66,13 +67,13 @@ for i in range(len(V)):
     
 """
 #-------- Plotting ----------#
-fig = plt.figure(1, figsize=(8,6))
+fig = plt.figure(1, figsize=(8, 6))
 
 ax = plt.subplot(111)
-ax.plot(V,Pil, label="$P_i$")
-ax.plot(V,Ppl, label="$P_p$")
-ax.plot(V,Pparl, label="$P_{par}$")
-ax.plot(V,Ptrl, label="$P_{tr}$")
+ax.plot(V, Pil, label="$P_i$")
+ax.plot(V, Ppl, label="$P_p$")
+ax.plot(V, Pparl, label="$P_{par}$")
+ax.plot(V, Ptrl, label="$P_{tr}$")
 ax.plot(V, Ptotal, label="$P_{tot}$")
 plt.xlabel("V [m/s]")
 plt.ylabel("P [kW]")
@@ -94,14 +95,27 @@ i_blade = 1/3*m_blade*R**2
 inflow_r = vi_hover/(Omega*R)
 lock_nr = rho*Cl_alpha*c*R**4/i_blade
 
+#Angular frame
+a0 = lock_nr/8*(theta_0-(4/3)*inflow_r)
+a1 = -16/lock_nr*(q/Omega)
+b1 = -q/Omega
+
 beta_par = lock_nr/8*(theta_0-(4*inflow_r)/3)
 
 beta_l = []
+beta_rotl = []
+
 for i in range(len(t)):
     beta_hom = beta_0 * m.exp(-lock_nr/16*Omega*t[i])*(m.cos(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]) + (lock_nr/16)/m.sqrt(1-(lock_nr/16)**2) * m.sin(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]))
     beta = beta_hom +beta_par
     beta_l.append(beta)
 
+    beta_parrot = a0 - a1 * m.cos(Omega * t[i]) - b1 * m.sin(Omega * t[i])
+    beta_rot = beta_hom +beta_parrot
+    beta_rotl.append(beta_rot)
+
+
 fig = plt.figure(2)    
 plt.plot(t,beta_l)
-plt.show
+plt.plot(t,beta_rotl)
+plt.show()
