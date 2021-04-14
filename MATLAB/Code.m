@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%% Constants %%%%%%%%%%%%%%
 k = 1.15 ;
-W = 93440.25 ;%N
+W = 93440.25 ; %N
 rho = 1.225 ;
 R = 7.315 ; %m
 N_blades = 4 ;
@@ -16,23 +16,25 @@ Omega = 30.264 ; %rad/s
 a = 343 ;
 CdS = 1.65 ;
 vi_hover = 15.06 ;
-%V = np.arange(1,100,0.1)
-%t = np.linspace(0,(6*m.pi/Omega),200)
+V = 1:0.01:100 ;
+t = linspace(0,(2*pi/Omega),200) ;
 
-% Constants Tail Rotor
-R_tr = 2.79/2 ;
-c_tr = 0.833 * 0.3048 ; %m 
+% ------ Constants Tail Rotor---------%
+R_tr = 2.79/2  ;
+c_tr = 0.833 * 0.3048 ;   %m 
 N_tr = 4 ;
-l_tr = 8.998 ;          %m
+l_tr = 8.998 ;            %m
 Omega_tr = 1530 / 2 / pi ;  %rad/s
 sigma_tr = N_tr*c_tr/(pi*R_tr) ;
 
-% Constants Flapping
-Cl_alpha = 0.10867 ;
-beta_0 = 0.2 ;
-theta_0 = 12.53/180*pi ;
+% ------ Constants Flapping-----------%
+Cl_alpha = 0.11*180/pi  ;%Fairfoiltools
+beta_0 = 0.2 ; %rad
+theta_0 = 12.53/180*pi ; %rad
+q = 20/180*pi ; %rotation rate
+p = 10/180*pi ;
 
-% Base calculations
+%-------- Base calculations ----------%
 sigma = N_blades*c/(pi*R) ;
 V_tip = Omega*R ;
 Mach_tip = V_tip/a ;
@@ -56,7 +58,7 @@ m_body = W / 9.80665 - m_rotor - m_tailrotor ;
 
 %Determine fraction of body weight for body 1 and body 2
 x_cg = 5.1562 ; %m
-frac = (10.993 - ((cg_x * W / 9.80665 + 4.967*m_rotor + 14.060*m_tailrotor)/m_body) )/6.757 ;
+frac = (10.993 - ((x_cg * W / 9.80665 + 4.967*m_rotor + 14.060*m_tailrotor)/m_body) )/6.757 ;
 
 m_body1 = m_body * frac ;
 m_body2 = m_body * (1-frac) ;
@@ -75,3 +77,94 @@ r_body1_2 = (x_cg_body1 - x_cg)^2 + (z_cg_body1 - z_cg)^2 ;
 r_body2_2 = (x_cg_body2 - x_cg)^2 + (z_cg_body2 - z_cg)^2 ;
 
 Myy_total = Myy_rotor + m_rotor * r_rotor2 + Myy_body1 + m_body1 * r_body1_2 + Myy_body2 + m_body2 * r_body2_2 + Myy_tailrotor + m_tailrotor * r_tailrotor2 ;
+
+%% Flapping 
+
+%%%%% Flapping
+
+m_blade = 110 ; %based on Blackhawk blade weight
+i_blade = 1/3*m_blade*R^2 ; 
+inflow_r = vi_hover/(Omega*R);
+lock_nr = (rho*Cl_alpha*c*R^4)/i_blade ;
+Vflap = 20 ;
+alpha_c = 12.83/180*pi ;
+mu = Vflap*sin(alpha_c)/(Omega*R) ;
+lam_c = Vflap*sin(alpha_c)/(Omega*R) ;
+
+%Angular frame
+a0 = lock_nr/8*(theta_0-(4/3)*inflow_r) ;
+a1 = p/Omega -16/lock_nr*(q/Omega) ;
+b1 = -q/Omega - 16*p/(lock_nr*Omega);
+
+a0forward = lock_nr/8*(theta_0*(1+mu^2)-4/3*(lam_c+inflow_r)) ;
+a1forward = (8/3*mu*theta_0-2*mu*(lam_c+inflow_r)-16/lock_nr*q/Omega)/(1-1/2*mu^2) ;
+b1forward = (4/3*mu*a0forward-q/Omega)/(1+1/2*mu^2) ;
+
+beta_par = lock_nr/8*(theta_0-(4*inflow_r)/3)*180/pi ;
+
+beta = zeros(length(t),1) ;
+beta_rot = zeros(length(t),1) ;
+beta_homl = zeros(length(t),1) ;
+beta_for = zeros(length(t),1) ;
+for i = 1: length(t)
+    beta_hom = (beta_0 * exp(-lock_nr/16*Omega*t(i))*(cos(Omega*sqrt(1-(lock_nr/16)^2)*t(i)) + (lock_nr/16)/sqrt(1-(lock_nr/16)^2) * sin(Omega*sqrt(1-(lock_nr/16)^2)*t(i)))*180/pi) ;
+    beta_homl(i) = beta_hom ;
+    beta(i) = (beta_hom + beta_par);
+    
+    beta_parrot = (a0 - a1 * cos(Omega * t(i)) - b1 * sin(Omega * t(i)))*180/pi ;
+    beta_rot(i) = (beta_hom + beta_parrot) ;
+        
+    beta_parfor = (a0forward - a1forward * cos(Omega * t(i)) - b1forward * sin(Omega * t(i)))*180/pi ;
+    beta_for(i) = (beta_hom +beta_parfor) ;
+end
+
+figure(1)
+plot(t, beta, 'DisplayName', "Hover")
+hold on
+yline(beta_par, 'DisplayName', "Hover Particular")
+hold on
+plot(t, beta_homl, 'DisplayName', "Hover Homogeneous")
+hold on
+plot(t,beta_rot, 'DisplayName', "Pitch and roll")
+hold on
+plot(t,beta_for, 'DisplayName', "Forward flight")
+hold off
+ylabel("Beta [degrees]")
+xlim([0,t(end)])
+legend
+
+
+%% Trim calculations
+
+a1 = zeros(length(V),1) ;
+theta_0 = zeros(length(V),1) ;
+epsilon = 0.001;
+
+vi_0 = sqrt(W / (2*rho*pi*R^2)) ;
+lambda_i = vi_0 / V_tip ; %starting value for lambda_i
+for i = 1: length(V)
+    D = 0.5 * rho * CdS * V(i)^2 ;
+    T = sqrt(W^2 + D^2) ;
+    C_T = T / (rho * pi * R^2 * V_tip^2) ; 
+    mu_trim = V(i) / V_tip ; 
+    error = 1 ;
+    while error > epsilon
+        C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
+        lambda_i = lambda_i - 0.000001 ; 
+        error = abs(C_T - C_T_glau) ;    
+    end
+    
+    A = [(1 + 1.5*mu_trim^2) (-8/3 * mu_trim); -mu_trim (2/3 + mu_trim^2)] ;
+%     B = [(-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i); (4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i)] ;
+%     x = inv(A) .* B ;
+    a1(i) = ((-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i) / det(A)) * 180/pi ;
+    theta_0(i) = ((4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i) / det(A)) * 180/pi ;
+end
+
+% Plotting
+figure(2)
+plot(V, -a1, 'DisplayName', '\theta_c')
+hold on
+plot(V, theta_0, 'DisplayName', '\theta_0')
+hold off
+legend
