@@ -15,7 +15,7 @@ a = 343
 CdS = 1.65
 vi_hover = 15.06
 V = np.arange(1,100,0.1)
-t = np.linspace(0,(6*m.pi/Omega),200)
+t = np.linspace(0,(2*m.pi/Omega),200)
 
 # ------ Constants Tail Rotor---------#
 R_tr = 2.79/2
@@ -26,10 +26,11 @@ Omega_tr = 1530 / 2 / m.pi  #rad/s
 sigma_tr = N_tr*c_tr/(m.pi*R_tr)
 
 # ------ Constants Flapping-----------#
-Cl_alpha = 0.10867
-beta_0 = 0.2
-theta_0 = 12.53/180*m.pi
-q = 0 #rotation rate
+Cl_alpha = 0.11*180/m.pi ##airfoiltools
+beta_0 = 0.2 #rad
+theta_0 = 12.53/180*m.pi #rad
+q = 20/180*m.pi #rotation rate
+p = 10/180*m.pi
 #-------- Base calculations ----------#
 sigma = N_blades*c/(m.pi*R)
 V_tip = Omega*R
@@ -90,32 +91,57 @@ plt.show
 
 ##### Flapping
 
-m_blade = (50*3.8 + 10*6.3)*10**(-2) * 4.45 / 0.27 / 9.81 #NASA doc -> [kg]
+m_blade = 110#(50*3.8 + 10*6.3)*10**(-2) * 4.45 / 0.27 / 9.81 #NASA doc -> [kg]
 i_blade = 1/3*m_blade*R**2
 inflow_r = vi_hover/(Omega*R)
-lock_nr = rho*Cl_alpha*c*R**4/i_blade
-
+lock_nr = (rho*Cl_alpha*c*R**4)/i_blade
+Vflap = 20
+alpha_c = 12.83/180*m.pi
+mu = Vflap*m.sin(alpha_c)/(Omega*R)
+lam_c = Vflap*m.sin(alpha_c)/(Omega*R) 
 #Angular frame
 a0 = lock_nr/8*(theta_0-(4/3)*inflow_r)
-a1 = -16/lock_nr*(q/Omega)
-b1 = -q/Omega
+a1 = p/Omega -16/lock_nr*(q/Omega)
+b1 = -q/Omega - 16*p/(lock_nr*Omega)
+
+a0forward = lock_nr/8*(theta_0*(1+mu**2)-4/3*(lam_c+inflow_r))
+a1forward = (8/3*mu*theta_0-2*mu*(lam_c+inflow_r)-16/lock_nr*q/Omega)/(1-1/2*mu**2)
+b1forward = (4/3*mu*a0forward-q/Omega)/(1+1/2*mu**2)
 
 beta_par = lock_nr/8*(theta_0-(4*inflow_r)/3)
 
 beta_l = []
 beta_rotl = []
-
+beta_homl = []
+beta_forl = []
 for i in range(len(t)):
     beta_hom = beta_0 * m.exp(-lock_nr/16*Omega*t[i])*(m.cos(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]) + (lock_nr/16)/m.sqrt(1-(lock_nr/16)**2) * m.sin(Omega*m.sqrt(1-(lock_nr/16)**2)*t[i]))
-    beta = beta_hom +beta_par
+    beta_homl.append(beta_hom*180/m.pi)
+    beta = (beta_hom +beta_par)*180/m.pi
     beta_l.append(beta)
 
     beta_parrot = a0 - a1 * m.cos(Omega * t[i]) - b1 * m.sin(Omega * t[i])
-    beta_rot = beta_hom +beta_parrot
+    beta_rot = (beta_hom +beta_parrot)*180/m.pi
     beta_rotl.append(beta_rot)
-
+    
+    beta_parfor = a0forward - a1forward * m.cos(Omega * t[i]) - b1forward * m.sin(Omega * t[i])
+    beta_for = (beta_hom +beta_parfor)*180/m.pi
+    beta_forl.append(beta_for)
 
 fig = plt.figure(2)    
-plt.plot(t,beta_l)
-plt.plot(t,beta_rotl)
+plt.plot(t, beta_l,color="#D62728", label="Hover")
+plt.axhline(180/m.pi*beta_par, color= "#1F77B4", label="Hover Particular")
+plt.plot(t, beta_homl, color= "#2CA02C", label="Hover Homogeneous")
+plt.plot(t,beta_rotl, color = "#E377C2", label= "Pitch and roll")
+plt.plot(t,beta_forl, color = "#FF7F0E", label="Forward flight")
+plt.ylabel("Beta [degrees]")
+plt.xlim(0,t[-1])
+axes1 = plt.gca()
+axes1.set_xlabel("time [seconds]")
+axes2 = axes1.twiny()
+axes2.set_xticks([0,0.5,1,1.5,2])
+axes2.set_xlabel("x pi [rad]")
+plt.title("Flapping angle non rotating frame")
+fig.legend(bbox_to_anchor=(0.9, 0.85), fancybox=True, shadow=True)
 plt.show()
+
