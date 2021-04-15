@@ -42,7 +42,7 @@ Mach_tip = V_tip/a ;
 %% Moment of Inertia calculations
 
 m_rotor = 4 * 110 ; %estimated from Sikorsky UH-60 helicopter
-Myy_rotor = 0; %Negligible based on the small r from its own cg
+Myy_rotor = 1/12 * m_rotor * (c^2 + (2*R)^2); 
 x_cg_rotor = 4.967 ;
 z_cg_rotor = 3.579 ; 
 
@@ -168,3 +168,6 @@ hold on
 plot(V, theta_0, 'DisplayName', '\theta_0')
 hold off
 legend
+
+%% Manoeuver Simulation
+
