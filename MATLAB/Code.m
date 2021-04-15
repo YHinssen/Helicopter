@@ -18,6 +18,7 @@ CdS = 1.65 ;
 vi_hover = 15.06 ;
 V = 1:0.01:100 ;
 t = linspace(0,(2*pi/Omega),200) ;
+g = 9.80665
 
 % ------ Constants Tail Rotor---------%
 R_tr = 2.79/2  ;
@@ -170,4 +171,79 @@ hold off
 legend
 
 %% Manoeuver Simulation
+%Trim function 
+function a_1, theta0 = trim_con(V) ;
+    D = 0.5 * rho * CdS * V^2 ;
+    T = sqrt(W^2 + D^2) ;
+    C_T = T / (rho * pi * R^2 * V_tip^2) ; 
+    mu_trim = V / V_tip ; 
+    error = 1 ;
+    while error > epsilon
+        C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
+        lambda_i = lambda_i - 0.000001 ; 
+        error = abs(C_T - C_T_glau) ;    
+    end
+    A = [(1 + 1.5*mu_trim^2) (-8/3 * mu_trim); -mu_trim (2/3 + mu_trim^2)] ;
+    a_1 = ((-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i) / det(A)) * 180/pi ;
+    theta0 = ((4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i) / det(A)) * 180/pi ;
+end
 
+
+V1 = 90  * 0.514444 ;
+V2 = 70  * 0.514444 ;
+V3 = 90  * 0.514444 ;
+V4 = 110 * 0.514444 ;
+m = W/g
+
+%Store info
+t = [] ;
+V = [] ;
+u = []
+w = []
+q = []
+theta_f = []
+
+
+%Set initial values
+t0 = 0 ;
+V(1) = V1 ;
+t(1) = t0 ;
+a_1, theta0 = trim_con(V1) ;
+
+
+i = 1 ;
+test = 1 ;
+ref = 1
+
+%Set time step
+dt = 0.1
+while test = 1
+    i += 1
+    t(i) = t(i-1) + dt
+    if ref = 1
+        V_ref = V2;
+%     if ref = 2
+%         V_ref = V3;
+%     if ref = 3
+%         V_ref = V4;
+       
+    V = sqrt(u(i-1)^2 + w(i-1)^2) ; 
+    D = 0.5 * rho * CdS * V^2 ;
+    
+    CT = 
+    
+    T = CT * rho * (Omega * R)^2 * pi * R^2;
+    
+    theta_f_ref = 
+    theta_c = 0.2*(theta_f(i-1) - theta_f_ref) + 0.2*q(i-1);
+    
+    udot = -g * sin(theta_f(i-1)) - D/m * u(i-1) / V(i-1) + T/m * sin(theta_c - a1) - q(i-1)*w(i-1);
+    wdot = g * cos(theta_f(i-1)) - D/m * w(i-1) / V(i-1) + T/m * cos(theta_c - a1) + q(i-1)*u(i-1);
+    qdot = -T/Myy_Total * h * sin(theta_c - a1);
+    theta_fdot = q(i-1);
+    
+    
+    if reached
+        test = 0 ;
+    
+end
