@@ -18,7 +18,7 @@ CdS = 1.65 ;
 vi_hover = 15.06 ;
 V = 1:0.01:100 ;
 t = linspace(0,(2*pi/Omega),200) ;
-g = 9.80665
+g = 9.80665 ;
 
 % ------ Constants Tail Rotor---------%
 R_tr = 2.79/2  ;
@@ -148,6 +148,7 @@ for i = 1: length(V)
     T = sqrt(W^2 + D^2) ;
     C_T = T / (rho * pi * R^2 * V_tip^2) ; 
     mu_trim = V(i) / V_tip ; 
+    lambda_i = vi_0 / V_tip ; %starting value for lambda_i
     error = 1 ;
     while error > epsilon
         C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
@@ -156,8 +157,6 @@ for i = 1: length(V)
     end
     
     A = [(1 + 1.5*mu_trim^2) (-8/3 * mu_trim); -mu_trim (2/3 + mu_trim^2)] ;
-%     B = [(-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i); (4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i)] ;
-%     x = inv(A) .* B ;
     a1(i) = ((-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i) / det(A)) * 180/pi ;
     theta_0(i) = ((4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i) / det(A)) * 180/pi ;
 end
@@ -171,79 +170,90 @@ hold off
 legend
 
 %% Manoeuver Simulation
-%Trim function 
-function a_1, theta0 = trim_con(V) ;
-    D = 0.5 * rho * CdS * V^2 ;
-    T = sqrt(W^2 + D^2) ;
-    C_T = T / (rho * pi * R^2 * V_tip^2) ; 
-    mu_trim = V / V_tip ; 
-    error = 1 ;
-    while error > epsilon
-        C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
-        lambda_i = lambda_i - 0.000001 ; 
-        error = abs(C_T - C_T_glau) ;    
-    end
-    A = [(1 + 1.5*mu_trim^2) (-8/3 * mu_trim); -mu_trim (2/3 + mu_trim^2)] ;
-    a_1 = ((-2*mu_trim^2 * D/W - 2*mu_trim*lambda_i) / det(A)) * 180/pi ;
-    theta0 = ((4/sigma * C_T / Cl_alpha + mu_trim*D/W + lambda_i) / det(A)) * 180/pi ;
-end
-
 
 V1 = 90  * 0.514444 ;
 V2 = 70  * 0.514444 ;
 V3 = 90  * 0.514444 ;
 V4 = 110 * 0.514444 ;
-m = W/g
+m = W/g ;
+h = 2.045 ; %height of center of the diskplane above cg
 
 %Store info
 t = [] ;
 V = [] ;
-u = []
-w = []
-q = []
-theta_f = []
+u = [] ;
+w = [] ;
+q = [] ;
+theta_f = [] ;
+x = [];
+z = [];
 
 
 %Set initial values
 t0 = 0 ;
 V(1) = V1 ;
 t(1) = t0 ;
-a_1, theta0 = trim_con(V1) ;
-
+[a_1, theta0] = trim_con(V1) ;
+x(1) = 0;
 
 i = 1 ;
 test = 1 ;
-ref = 1
+ref = 1 ;
 
 %Set time step
-dt = 0.1
-while test = 1
-    i += 1
-    t(i) = t(i-1) + dt
-    if ref = 1
+dt = 0.1 ;
+while test == 1
+    i = i + 1 ;
+    t(i) = t(i-1) + dt ;
+    if ref == 1
         V_ref = V2;
+    end
 %     if ref = 2
 %         V_ref = V3;
+%     end 
 %     if ref = 3
 %         V_ref = V4;
+%     end
        
-    V = sqrt(u(i-1)^2 + w(i-1)^2) ; 
-    D = 0.5 * rho * CdS * V^2 ;
+    V(i) = sqrt(u(i-1)^2 + w(i-1)^2) ; 
+    D = 0.5 * rho * CdS * V(i)^2 ;
     
-    CT = 
+    theta_f_ref = 5 * 180 / pi ;
+    %-0.005 * (15 - x) + 0.02 * u(i-1) ;
+    theta_c(i) = 0.2*(theta_f(i-1) - theta_f_ref) + 0.2*q(i-1);
     
-    T = CT * rho * (Omega * R)^2 * pi * R^2;
+    alpha_c = theta_c - arctan(w(i-1)/u(i-1)) ;
+    mu = V(i) / (Omega*R) * cos(alpha_c) ;
+    lambda_c = V / (Omega*R) * sin(alpha_c) ;
     
-    theta_f_ref = 
-    theta_c = 0.2*(theta_f(i-1) - theta_f_ref) + 0.2*q(i-1);
+    lambda_i = vi_0 / V_tip ; %starting value for lambda_i
+    error = 1 ;
+    while error > epsilon
+        a1 = (8/3 * mu * theta_0 - 2*mu * (lambda_c + lambda_i) - 16 / locknr * q(i-1)/Omega) / (1 - 0.5*mu^2) ; 
+        C_T_BEM = 0.25 * Cl_alpha * sigma* (2/3*theta_0*(1+3/2*mu^2)-(lambda_c+lambda_i)) ;
+        C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
+        lambda_i = lambda_i - 0.000001 ; 
+        error = abs(C_T_BEM - C_T_glau) ; 
+    end
+    
+    T = C_T_glau * rho * (Omega * R)^2 * pi * R^2;
     
     udot = -g * sin(theta_f(i-1)) - D/m * u(i-1) / V(i-1) + T/m * sin(theta_c - a1) - q(i-1)*w(i-1);
     wdot = g * cos(theta_f(i-1)) - D/m * w(i-1) / V(i-1) + T/m * cos(theta_c - a1) + q(i-1)*u(i-1);
     qdot = -T/Myy_Total * h * sin(theta_c - a1);
     theta_fdot = q(i-1);
+    xdot = u(i)*cos(theta_f(i))+w(i)*sin(theta_f(i));
+    zdot = -u(i)*sin(theta_f(i))+w(i)*cos(theta_f(i));
     
     
-    if reached
-        test = 0 ;
+    u(i)=u(i-1)+dt*udot;
+    w(i)=w(i-1)+dt*wdot;
+    q(i)=q(i-1)+dt*qdot;
+    theta_f(i)=theta_f(i-1)+dt*theta_fdot;
+    x(i)=x(i-1)+dt*xdot;
+    z(i)=z(i-1)+dt*-zdot;
     
+%     if reached
+%         test = 0 ;
+    test = 0 ;
 end
