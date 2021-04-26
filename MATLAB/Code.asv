@@ -176,8 +176,7 @@ V2 = 70  * 0.514444 ;
 V3 = 90  * 0.514444 ;
 V4 = 110 * 0.514444 ;
 m = W/g ;
-h = 2.045 ; %height of center of the diskplane above cg
-[a_1_pilot, theta0_pilot] = trim_con(V1) ;
+h_rotor = 2.045 ; %height of center of the diskplane above cg
 theta_f_design = 0 * pi / 180 ;
 h_des = 100 ; %m
 
@@ -195,6 +194,9 @@ theta_c = [0] ;
 theta_0 = [0] ;
 c = [0] ;
 delta_c = [0] ;
+delta_theta_f = [0] ;
+a_1_pilot = [] ;
+theta0_pilot = [];
 
 
 %Set initial values
@@ -206,12 +208,14 @@ z(1) = -100;
 q(1) = 0; 
 c(1) = 0;
 h(1) = 100;
-theta_f(1) = 0*pi/180 ;
+theta_f(1) = atan( - 0.5 * rho * CdS * V(1)^2 / W) ;
 u(1) = V1;
 w(1) = 0;
-theta_c(1) = a_1_pilot * pi/180 ;
+[a_1_pilot(1), theta0_pilot(1)] = trim_con(V1) ;
+theta_c(1) = a_1_pilot(1) * pi/180 ;
 theta_0(1) = 0 * pi/180 ;
 delta_c(1) = 0 ;
+delta_theta_f(1) = 0 ;
 
 i = 1 ;
 test = 1 ;
@@ -226,19 +230,22 @@ while test == 1
     if ref == 1
         V_ref = V2;
     end
-%     if ref = 2
-%         V_ref = V3;
-%     end 
-%     if ref = 3
-%         V_ref = V4;
-%     end
+    if ref == 2
+        V_ref = V3;
+    end 
+    if ref == 3
+        V_ref = V4;
+    end
+    if ref > 3
+        V_ref = V4;
+        test = 0 ; 
+    end
        
     V = [V, sqrt(u(i-1)^2 + w(i-1)^2)] ; 
     D = 0.5 * rho * CdS * V(i)^2 ;
-    D_ref = 0.5 * rho * CdS * V_ref^2 ;
     
     % Altitude hold mode
-    theta_gen = 0 * pi / 180 ;
+    theta_gen = 2 * pi / 180 ;
     K1 = 0.0022;
     K2 = 0.065 ;
     K3 = 0.04 ;
@@ -248,12 +255,15 @@ while test == 1
     theta_0 = [theta_0, theta_gen + K1 * (c_des - c(i-1)) + K2 * delta_c(i-1)] ;
     
     % Follow V_ref
-    
-    % Longitudinal control
-    theta_c = [theta_c, a_1_pilot * pi/180] ;
-    
+%     D_ref = 0.5 * rho * CdS * V_ref^2 ;
 %     theta_f_ref = atan(-D_ref / W) ; 
-%     theta_c = [theta_c, 0.75*(theta_f(i-1) - theta_f_ref)];% + 0.2*q(i-1)] ;
+    theta_f_ref = -0.06 * (V_ref - V(i-1)) ;
+    K5 = 0.75 ; 
+    K6 = 0.75 ;
+    K7 = -0.075 ;
+    
+    % Longitudinal control  
+    theta_c = [theta_c, K5*(theta_f(i-1) - theta_f_ref) + K6*q(i-1) + K7 * delta_theta_f(i-1)] ;
     
     alpha_c = theta_c(i) - atan(w(i-1)/u(i-1)) ;
     mu = V(i) / (Omega*R) * cos(alpha_c) ;
@@ -277,7 +287,7 @@ while test == 1
     
     udot = -g * sin(theta_f(i-1)) - D/m * u(i-1) / V(i-1) + T/m * sin(theta_c(i) - a1) - q(i-1)*w(i-1);
     wdot = g * cos(theta_f(i-1)) - D/m * w(i-1) / V(i-1) - T/m * cos(theta_c(i) - a1) + q(i-1)*u(i-1);
-    qdot = -T/Myy_total * h * sin(theta_c(i) - a1);
+    qdot = -T/Myy_total * h_rotor * sin(theta_c(i) - a1);
     
     u = [u, u(i-1)+dt*udot]  ;
     w = [w, w(i-1)+dt*wdot]  ;
@@ -287,10 +297,14 @@ while test == 1
     xdot = u(i)*cos(theta_f(i)) + w(i)*sin(theta_f(i));
     zdot = -u(i)*sin(theta_f(i)) + w(i)*cos(theta_f(i));
     delta_c = [delta_c, delta_c(i-1) + (c_des - c(i-1)) * dt] ;
+    delta_theta_f = [delta_theta_f, delta_theta_f(i-1) + (theta_f_ref - theta_f(i-1)) * dt] ;
     x = [x, x(i-1)+dt*xdot]  ;
     z = [z, z(i-1)+dt*zdot] ;
     c = [c, -zdot]  ;
     h = [h, -z(i)] ;
+    
+    a_1_pilot = [a_1_pilot, a_1_pilot(i-1)] ;
+    theta0_pilot = [theta0_pilot, theta0_pilot(i-1)]  ;
     
     epsilon2 = 1 ;
 %     if (abs(V(i) - V_ref)) < epsilon2
@@ -298,14 +312,76 @@ while test == 1
 %     end
     count2 = count2 + 1;
     
-    if count2 > 1500 
-        test = 0 ;
+    if count2 > 50000 
+        test = 0 ; %safety for not being stuck in the while loop for ever
     end
+    
+    if count2 == 4800 
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V2) ;
+    end
+    
+    if count2 == 9800
+        ref = ref + 1 ;
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V3) ;
+    end
+    
+    if count2 == 15000
+        ref = ref + 1 ;
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V4) ;
+    end
+    
+    if count2 == 5000 
+        ref = ref + 1 ;
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V2) ;
+    end
+    
+    if count2 == 10000
+        ref = ref + 1 ;
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V3) ;
+    end
+    
+    if count2 == 15000
+        ref = ref + 1 ;
+        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V4) ;
+    end
+    
 end
-disp( 'finished')
-figure(1)
-plot(t,h)
-% ylim([0,2])
 
-% figure(2)
-% plot(t,theta_f, t,theta_0, t,theta_c)
+
+figure(1)
+plot(t,V)
+grid on
+title("Helicopter velocity")
+xlabel("t [s]")
+ylabel("V [m/s]")
+
+
+figure(2)
+plot(t,theta_f*180/pi)
+grid on
+title("Helicopter body pitch")
+xlabel("t [s]")
+ylabel("\theta_f [deg]")
+
+figure(3)
+plot(t,(theta_0*180/pi - theta0_pilot))
+grid on
+title("Helicopter collective control input")
+xlabel("t [s]")
+ylabel("\theta_0 [deg]")
+
+
+figure(4)
+plot(t,(theta_c*180/pi - a_1_pilot))
+grid on
+title("Helicopter longitudinal control input")
+xlabel("t [s]")
+ylabel("\theta_c [deg]")
+
+
+figure(5)
+plot(t,h)
+grid on
+title("Height deviations of the helicopter")
+xlabel("t [s]")
+ylabel("h [m]")

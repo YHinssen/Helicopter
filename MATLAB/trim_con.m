@@ -6,7 +6,7 @@
 %%%%%%%%%%%%%% Functions %%%%%%%%%%%%%%
 
 %Trim function 
-function [a_1, theta0] = trim_con(V) 
+function [a_1, theta0,lambda_i] = trim_con(V) 
     W = 93440.25 ; %N
     rho = 1.225 ;
     R = 7.315 ; %m
@@ -24,7 +24,7 @@ function [a_1, theta0] = trim_con(V)
     lambda_i = vi_0 / V_tip ; %starting value for lambda_i
     mu_trim = V / V_tip ; 
     error = 1 ;
-    epsilon = 0.001;
+    epsilon = 0.0001;
     while error > epsilon
         C_T_glau = 2*lambda_i * sqrt((mu_trim * cos(D/W))^2 + (mu_trim * sin(D/W) + lambda_i)^2) ;
         lambda_i = lambda_i - 0.000001 ; 
