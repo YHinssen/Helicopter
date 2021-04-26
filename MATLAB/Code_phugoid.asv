@@ -95,7 +95,6 @@ t_c = T / (rho * pi * R^2 * V_tip^2 * sigma) ;
 t_hat = m/(rho*sigma*pi*R^3 * Omega) ;
 wc = W / (rho * pi * R^2 * V_tip^2 * sigma) ;
 [a1, theta0, lambda_i] = trim_con(V) ;
-% a1 = 2*mu*(4*theta0/3 + lambda) / (1 - 0.5*mu^2) ;
 a1 = 0;
 theta0 = 0 ;
 theta_f0 = atan( - D/W);
@@ -107,7 +106,7 @@ V_bar = V / vi_hover ;
 V_hat = V / V_tip ;
 nu_i_bar = sqrt((-(V_bar)^2 / 2) + sqrt(((V_bar)^4 / 4) + 1)) ; %
 
-S_FP = 2.5; %CHECK EVEN MET PAINT %Fuselage equivalent plate area
+S_FP = 2.5; %Fuselage equivalent plate area
 d0 = S_FP / (sigma*pi*R^2) ;
 hcd = 0.25*mu*delta ;
 tcd = t_c ;
@@ -118,10 +117,10 @@ lambda = sin(alpha_nf - lambda_i) ;
 
 
 l = (z_cg_rotor - z_cg)/R ;
-b1 = a1 + hcd / t_c ;
 a1_s = hcd / t_c ;
-zq = 0 ; %done
+zq = 0 ;
 a1 = 2*mu*(4*theta0/3 + lambda)/(1-0.5*mu^2);
+b1 = a1 + hcd / t_c ;
 theta0 = ((4 * tcd/Cl_alpha) - lambda_D * (1 - 0.5*mu^2) / (1+1.5*mu^2)) * 1.5*(1+1.5*mu^2)/(1-mu^2 + 2.25*mu^4) ;
 
 dlambda_i_dmu = (2*mu*theta0 + alpha_nf - (4*t_c /(Cl_alpha * lambda_i))*V_bar*nu_i_bar^3) / (1 + (4/Cl_alpha)*(t_c/lambda_i)*(1 + nu_i_bar^4)) ;
@@ -138,7 +137,38 @@ da1_dq = -16 / lock_nr /(1 - 0.5*mu^2) ;
 dtc_dq = -zq ;
 dhcd_dq = -4*Cl_alpha/(lock_nr * (1-0.5*mu^2)) * (0.5*lambda + mu*a1 - mu^2 * theta0) ;
 
+xu = -t_c * da1_dmu - alpha_D * dtc_dmu - dhcd_dmu ;
+mu_prime = - (l - h_rotor*a1_s) * dtc_dmu + h_rotor*(t_c * da1_dmu + dhcd_dmu) ;
+mq_prime = - (l - h_rotor*a1_s) * dtc_dq + h_rotor*(t_c * da1_dq + dhcd_dq) ;
 
+
+Xu = xu * rho * sigma * pi * R^3 * Omega ;
+Mu = mu_prime * rho * sigma * pi * R^4 * Omega ;
+Mq = mq_prime * rho * sigma * pi * R^5 * Omega ;
+
+syms eigen
+eqn = eigen^3 - (Xu/m + Mq/Myy_total) * eigen^2 + Xu/m*Mq/Myy_total * eigen + g*Mu/Myy_total == 0;
+S = solve(eqn, eigen, 'MaxDegree', 3) ;
+
+eig1 = simplify(S(1))
+eig2 = simplify(S(2))
+eig3 = simplify(S(3))
+
+eig1_actual = (582538391040597808632503915665530953184334196401543 - 211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2))^(1/3)/216172782113783808 + (211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)/216172782113783808 - 6893244655668713/216172782113783808 ;
+eig2_actual = (3^(1/2)*(211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)*1i)/432345564227567616 - (211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)/432345564227567616 - ((582538391040597808632503915665530953184334196401543 - 211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2))^(1/3)*(1 + 3^(1/2)*1i))/432345564227567616 - 6893244655668713/216172782113783808 ;
+eig3_actual = - (3^(1/2)*(211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)*1i)/432345564227567616 - (211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)/432345564227567616 + ((582538391040597808632503915665530953184334196401543 - 211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2))^(1/3)*(- 1 + 3^(1/2)*1i))/432345564227567616 - 6893244655668713/216172782113783808 ;
+
+omega_0 = imag(eig2_actual) ;
+nu = - real(eig2_actual) ;
+omega_n = sqrt(nu^2 + omega_0^2) ;
+zeta = nu/omega_n ;
+
+
+%% Extra calculations
+% Another calculation was initialized as well, in order to make use of the
+% full system equations instead of just the single equation for the
+% eigenvalues of the phugoid motion. However, due to time concerns, this
+% was not completed before the deadline. The work can be seen below
 
 xu = -t_c * da1_dmu - alpha_D * dtc_dmu - dhcd_dmu ;
 xw = -t_c * da1_dw - alpha_D * dtc_dw - dhcd_dw ;
@@ -158,14 +188,16 @@ iB = Myy_total / (m * R^2) ;
 m_u = mu_star / iB * mu_prime ;
 m_w = mu_star / iB * mw_prime ;
 m_q = -mq_prime / iB ;
-% 
-dlambda_dw = alpha - dlambdai_dw ;
-dCT_dmu = Cl_alpha * sigma /4 * dlambda_dw ;
-dlambda0_dmu = alpha - 
-dlambdai0_dw = lambda_i0 / C_T * dCT_dmu 0 8 * lambda_i0^3 / C_T^2 * (mu + lambda0 * dlambda0_dmu)
-dlambdai_dw = (1 + k) * dlambdai0_dw ;
-m_wdot_prime = -V_inf * l_inf * a_inf * dlambdai_dw ;
-% m_wdot = 0 ;
+
+
+% THIS PART IS NOT YET WORKING
+% dlambda_dw = alpha - dlambdai_dw ;
+% dCT_dmu = Cl_alpha * sigma /4 * dlambda_dw ;
+% dlambda0_dmu = alpha - 
+% dlambdai0_dw = lambda_i0 / C_T * dCT_dmu 0 8 * lambda_i0^3 / C_T^2 * (mu + lambda0 * dlambda0_dmu)
+% dlambdai_dw = (1 + k) * dlambdai0_dw ;
+% m_wdot_prime = -V_inf * l_inf * a_inf * dlambdai_dw ;
+m_wdot = 0 ;
 
 % B matrix - control matrix
 da1_dB1 = -mu * da1_dw   ;
@@ -209,25 +241,25 @@ eigen_control = eig(A-B.' * K) ;
 % mthetaf_prime = 
 
 Xu = xu * rho * sigma * pi * R^3 * Omega ;
-% Xw = xw * rho * sigma * pi * R^3 * Omega ;
-% Xq = xq_prime * rho * sigma * pi * R^4 * Omega ;
-% Xthetaf = xthetaf * rho * sigma * pi * R^4 * Omega^2 ;
-% XB1 = xB1 * rho * sigma * pi * R^4 * Omega^2 ;
-% Xtheta0 = xtheta0 * rho * sigma * pi * R^4 * Omega^2 ;
+Xw = xw * rho * sigma * pi * R^3 * Omega ;
+Xq = xq_prime * rho * sigma * pi * R^4 * Omega ;
+Xthetaf = xthetaf * rho * sigma * pi * R^4 * Omega^2 ;
+XB1 = xB1 * rho * sigma * pi * R^4 * Omega^2 ;
+Xtheta0 = xtheta0 * rho * sigma * pi * R^4 * Omega^2 ;
 
-% Zu = zu * rho * sigma * pi * R^3 * Omega ;
-% Zw = zw * rho * sigma * pi * R^3 * Omega ;
-% Zq = zq_prime * rho * sigma * pi * R^4 * Omega ;
-% Zthetaf = zthetaf * rho * sigma * pi * R^4 * Omega^2 ;
-% ZB1 = zB1 * rho * sigma * pi * R^4 * Omega^2 ;
-% Ztheta0 = ztheta0 * rho * sigma * pi * R^4 * Omega^2 ;
+Zu = zu * rho * sigma * pi * R^3 * Omega ;
+Zw = zw * rho * sigma * pi * R^3 * Omega ;
+Zq = zq_prime * rho * sigma * pi * R^4 * Omega ;
+Zthetaf = zthetaf * rho * sigma * pi * R^4 * Omega^2 ;
+ZB1 = zB1 * rho * sigma * pi * R^4 * Omega^2 ;
+Ztheta0 = ztheta0 * rho * sigma * pi * R^4 * Omega^2 ;
 
 Mu = mu_prime * rho * sigma * pi * R^4 * Omega ;
-% Mw = mw_prime * rho * sigma * pi * R^4 * Omega ;
+Mw = mw_prime * rho * sigma * pi * R^4 * Omega ;
 Mq = mq_prime * rho * sigma * pi * R^5 * Omega ;
-% Mthetaf = mthetaf_prime * rho * sigma * pi * R^5 * Omega^2 ;
-% MB1 = mtheta0_prime * rho * sigma * pi * R^5 * Omega^2 ;
-% Mtheta0 = mtheta0_prime * rho * sigma * pi * R^5 * Omega^2 ;
+Mthetaf = mthetaf_prime * rho * sigma * pi * R^5 * Omega^2 ;
+MB1 = mtheta0_prime * rho * sigma * pi * R^5 * Omega^2 ;
+Mtheta0 = mtheta0_prime * rho * sigma * pi * R^5 * Omega^2 ;
 
 syms eigen
 eqn = eigen^3 - (Xu/m + Mq/Myy_total) * eigen^2 + Xu/m*Mq/Myy_total * eigen + g*Mu/Myy_total == 0;
@@ -241,7 +273,7 @@ eig1_actual = (582538391040597808632503915665530953184334196401543 - 21110623253
 eig2_actual = (3^(1/2)*(211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)*1i)/432345564227567616 - (211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)/432345564227567616 - ((582538391040597808632503915665530953184334196401543 - 211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2))^(1/3)*(1 + 3^(1/2)*1i))/432345564227567616 - 6893244655668713/216172782113783808 ;
 eig3_actual = - (3^(1/2)*(211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)*1i)/432345564227567616 - (211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2) + 582538391040597808632503915665530953184334196401543)^(1/3)/432345564227567616 + ((582538391040597808632503915665530953184334196401543 - 211106232532992*7614595609951795871339376229364821581342807978608078017583117661021705669^(1/2))^(1/3)*(- 1 + 3^(1/2)*1i))/432345564227567616 - 6893244655668713/216172782113783808 ;
 
-omega_0 = Im(eig2_actual) ;
-nu = - Re(eig2_actual) ;
-omega_n = sqrt(nu^2 + omega_0^2)
-
+omega_0 = imag(eig2_actual) ;
+nu = - real(eig2_actual) ;
+omega_n = sqrt(nu^2 + omega_0^2) ;
+zeta = nu/omega_n ;

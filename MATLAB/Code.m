@@ -133,6 +133,7 @@ hold off
 ylabel("Beta [degrees]")
 xlim([0,t(end)])
 legend
+grid on
 
 
 %% Trim calculations
@@ -168,6 +169,10 @@ hold on
 plot(V, theta_0, 'DisplayName', '\theta_0')
 hold off
 legend
+grid on
+title("Control inputs for varying velocity")
+xlabel("Velocity [m/s]")
+ylabel("Control input [deg]")
 
 %% Manoeuver Simulation
 
