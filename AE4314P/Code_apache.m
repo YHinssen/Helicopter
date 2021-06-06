@@ -133,6 +133,7 @@ hold off
 ylabel("Beta [degrees]")
 xlim([0,t(end)])
 legend
+grid on
 
 
 %% Trim calculations
@@ -168,6 +169,10 @@ hold on
 plot(V, theta_0, 'DisplayName', '\theta_0')
 hold off
 legend
+grid on
+title("Control inputs for varying velocity")
+xlabel("Velocity [m/s]")
+ylabel("Control input [deg]")
 
 %% Manoeuver Simulation
 
@@ -176,7 +181,7 @@ V2 = 70  * 0.514444 ;
 V3 = 90  * 0.514444 ;
 V4 = 110 * 0.514444 ;
 m = W/g ;
-h_rotor = 2.045 ; %height of center of the diskplane above cg
+h_rotor = 2.045; %height of center of the diskplane above cg
 theta_f_design = 0 * pi / 180 ;
 h_des = 100 ; %m
 
@@ -211,7 +216,7 @@ h(1) = 100;
 theta_f(1) = atan( - 0.5 * rho * CdS * V(1)^2 / W) ;
 u(1) = V1;
 w(1) = 0;
-[a_1_pilot(1), theta0_pilot(1)] = trim_con(V1) ;
+[a_1_pilot(1), theta0_pilot(1),lambda_i_pilot] = trim_con(V1) ;
 theta_c(1) = a_1_pilot(1) * pi/180 ;
 theta_0(1) = 0 * pi/180 ;
 delta_c(1) = 0 ;
@@ -317,37 +322,32 @@ while test == 1
     end
     
     if count2 == 4800 
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V2) ;
+        [a_1_pilot(i), theta0_pilot(i),lambda_i_pilot] = trim_con(V2) ;
     end
     
     if count2 == 9800
-        ref = ref + 1 ;
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V3) ;
+        [a_1_pilot(i), theta0_pilot(i),lambda_i_pilot] = trim_con(V3) ;
     end
     
-    if count2 == 15000
-        ref = ref + 1 ;
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V4) ;
+    if count2 == 14800
+        [a_1_pilot(i), theta0_pilot(i),lambda_i_pilot] = trim_con(V4) ;
     end
     
     if count2 == 5000 
         ref = ref + 1 ;
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V2) ;
     end
     
     if count2 == 10000
         ref = ref + 1 ;
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V3) ;
     end
     
     if count2 == 15000
         ref = ref + 1 ;
-        [a_1_pilot(i), theta0_pilot(i)] = trim_con(V4) ;
     end
     
 end
 
-
+%% Plots
 figure(1)
 plot(t,V)
 grid on
@@ -385,3 +385,10 @@ grid on
 title("Height deviations of the helicopter")
 xlabel("t [s]")
 ylabel("h [m]")
+
+%% Phugoid simulation
+V1 = 90  * 0.514444 ;
+m = W/g ;
+h_rotor = 2.045 ; %height of center of the diskplane above cg
+theta_f_design = 0 * pi / 180 ;
+h_des = 100 ; %m
