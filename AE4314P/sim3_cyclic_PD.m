@@ -13,9 +13,9 @@ vtip = 200;
 R = 7.32;
 Myy = 10615;
 h_rotor = 1;
-Omega = vtip/(R);
+Omega = vtip /(R);
 A = pi*R^2;
-tau = .1;		%time constant in dynamiCs inflow!!!
+tau = .1;		%time constant in dynamics inflow!!!
 collect(1) = 6*pi/180;
 longit(1) = 0*pi/180;
 
