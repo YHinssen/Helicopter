@@ -176,7 +176,7 @@ for j=1: rows(1)
     q_pk_tab(j,k) = S2.SettlingMax ;
     delta_theta_pk_tab(j,k) = S1.SettlingMax ;
     
-    q_test = -100;
+    q_test = 100;
     for s=1: length(q)
         if q == q_pk_tab(j,k)
             q_test = q;
@@ -186,9 +186,5 @@ for j=1: rows(1)
             break
         end
     end
-    disp(q_pk_tab(j,k))
-    disp(delta_theta_pk_tab(j,k))
-    disp(delta_theta_min_tab(j,k))
-    pause
     end
 end
