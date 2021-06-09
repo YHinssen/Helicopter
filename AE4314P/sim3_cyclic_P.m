@@ -153,22 +153,22 @@ for j=1: rows(1)
     t(i+1)=t(i)+stap;
     end 
 
-    % figure(1)
-    % plot(t,u),xlabel('t (s)'),ylabel('u(m)')
-    figure(2)
-    plot(t,pitch*180/pi),xlabel('t (s)'),ylabel('pitch(deg)')
-    % figure(3)
-    % plot(t,x),xlabel('t (s)'),ylabel('x(m)')
-    % figure(4)
-    % plot(t,w),xlabel('t (s)'),ylabel('w(m)')
-    figure(5)
-    plot(t,q*180/pi),xlabel('t (s)'),ylabel('q(m)')
-    % figure(6)
-    % plot(t,labi),xlabel('t (s)'),ylabel('labi(m)')
-    % figure(7)
-    % plot(t,-z),xlabel('t (s)'),ylabel('h(m)')
-    % figure(8)
-    % plot(t(1:800),longit*180/pi),xlabel('t (s)'),ylabel('longit grd')
+%     figure(1)
+%     plot(t,u),xlabel('t (s)'),ylabel('u(m)')
+%     figure(2)
+%     plot(t,pitch*180/pi),xlabel('t (s)'),ylabel('pitch(deg)')
+%     figure(3)
+%     plot(t,x),xlabel('t (s)'),ylabel('x(m)')
+%     figure(4)
+%     plot(t,w),xlabel('t (s)'),ylabel('w(m)')
+%     figure(5)
+%     plot(t,q*180/pi),xlabel('t (s)'),ylabel('q(m)')
+%     figure(6)
+%     plot(t,labi),xlabel('t (s)'),ylabel('labi(m)')
+%     figure(7)
+%     plot(t,-z),xlabel('t (s)'),ylabel('h(m)')
+%     figure(8)
+%     plot(t(1:800),longit*180/pi),xlabel('t (s)'),ylabel('longit grd')
 
     S1 = stepinfo(pitch*180/pi,t);
     S2 = stepinfo(q*180/pi,t);
@@ -178,17 +178,17 @@ for j=1: rows(1)
     
     q_test = -100;
     for s=1: length(q)
-        if q == q_pk_tab(j,k)
-            q_test = q;
+        if q(s)*180/pi == q_pk_tab(j,k)
+            q_test = q(s);
         end
-        if q < 0.9*q_test
-            delta_theta_min_tab(j,k) = pitch(s);
+        if q(s) < 0.9*q_test
+            delta_theta_min_tab(j,k) = pitch(s)*180/pi;
             break
         end
     end
     disp(q_pk_tab(j,k))
+    disp(q_test*180/pi)
     disp(delta_theta_pk_tab(j,k))
     disp(delta_theta_min_tab(j,k))
-    pause
     end
 end
