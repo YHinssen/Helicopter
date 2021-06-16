@@ -41,7 +41,7 @@ gamma_tab = [gamma gamma gamma gamma gamma gamma gamma;
 delta_theta_pk_tab = zeros(4,7);
 delta_theta_min_tab = zeros(4,7);
 q_pk_tab = zeros(4,7);
-
+thetapk_qpk_tab = zeros(4,7);
 
 rows = size(q_pk_tab);
 columns = size(q_pk_tab);
@@ -75,11 +75,11 @@ for j=1: rows(1)
     stap=(teind-t0)/aantal;
 
     for i=1:aantal 
-       if t(i)>=0.5 & t(i)<=1 longit(i)=1*pi/180;
+       if t(i)>=0.5 & t(i)<=2.5 longit(i)=2.5*pi/180;
        else longit(i)=0*pi/180;
        end
 
-       if t(i)>=15 longitgrd(i)=.2*pitch(i)*180/pi;%Pcontroller uses longit in deg
+       if t(i)>=15 longitgrd(i)=.25*pitch(i)*180/pi;%Pcontroller uses longit in deg
            longit(i)=longitgrd(i)*pi/180;	%in rad
        end    
        %longit(i)=longitgrd(i)*pi/180;	%in rad
@@ -175,6 +175,7 @@ for j=1: rows(1)
 
     q_pk_tab(j,k) = S2.SettlingMax ;
     delta_theta_pk_tab(j,k) = S1.SettlingMax ;
+    thetapk_qpk_tab(j,k) = S1.SettlingMax / S2.SettlingMax ;
     
     q_test = -100;
     for s=1: length(q)
@@ -186,9 +187,10 @@ for j=1: rows(1)
             break
         end
     end
-    disp(q_pk_tab(j,k))
-    disp(q_test*180/pi)
-    disp(delta_theta_pk_tab(j,k))
-    disp(delta_theta_min_tab(j,k))
+%     disp(q_pk_tab(j,k))
+%     disp(q_test*180/pi)
+%     disp(delta_theta_pk_tab(j,k))
+%     disp(delta_theta_min_tab(j,k))
+%     pause
     end
 end
