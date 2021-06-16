@@ -79,11 +79,11 @@ for j=1: rows(1)
     stap=(teind-t0)/aantal;
 
     for i=1:aantal 
-       if t(i)>=0.5 & t(i)<=1 longit(i)=1*pi/180;
+       if t(i)>=0.5 & t(i)<=2.5 longit(i)=2.*pi/180;
        else longit(i)=0*pi/180;
        end
 
-       if t(i)>=15 longitgrd(i)=.2*pitch(i)*180/pi+.2*q(i)*180/pi;%PD in deg
+       if t(i)>=14.5 longitgrd(i)=.35*pitch(i)*180/pi+.35*q(i)*180/pi;%PD in deg
            longit(i)=longitgrd(i)*pi/180;	%in rad
        end    
        %longit(i)=longitgrd(i)*pi/180;	%in rad
