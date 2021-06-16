@@ -1,4 +1,4 @@
-%SIMULATION OF A CYCLIC PITCH INPUT THETA_C=1 DEG GIVEN FROM HOVER 
+ %SIMULATION OF A CYCLIC PITCH INPUT THETA_C=1 DEG GIVEN FROM HOVER 
 %0.5 SEC<T<1 SEC. Now from the 15th second a P controller becomes active 
 clear
 %INITIAL DATA HELICOPTER
@@ -154,41 +154,73 @@ for j=1: rows(1)
     end 
 
     figure(1)
-    plot(t,u),xlabel('t (s)'),ylabel('u(m)')
+    plot(t,u),xlabel('t (s)'),ylabel('u(m/s)')
+    hold on
     figure(2)
     plot(t,pitch*180/pi),xlabel('t (s)'),ylabel('pitch(deg)')
+    hold on
     figure(3)
     plot(t,x),xlabel('t (s)'),ylabel('x(m)')
+    hold on
     figure(4)
-    plot(t,w),xlabel('t (s)'),ylabel('w(m)')
+    plot(t,w),xlabel('t (s)'),ylabel('w(m/s)')
+    hold on
     figure(5)
-    plot(t,q*180/pi),xlabel('t (s)'),ylabel('q(m)')
+    plot(t,q*180/pi),xlabel('t (s)'),ylabel('q(deg/s)')
+    hold on
     figure(6)
     plot(t,labi),xlabel('t (s)'),ylabel('labi(-)')
+    hold on
     figure(7)
     plot(t,-z),xlabel('t (s)'),ylabel('h(m)')
+    hold on
     figure(8)
     plot(t(1:800),longit*180/pi),xlabel('t (s)'),ylabel('longit grd')
+    hold on
 
-    S1 = stepinfo(pitch*180/pi,t);
-    S2 = stepinfo(q*180/pi,t);
+%     S1 = stepinfo(pitch*180/pi,t);
+%     S2 = stepinfo(q*180/pi,t);
+% 
+%     q_pk_tab(j,k) = S2.SettlingMax ;
+%     delta_theta_pk_tab(j,k) = S1.SettlingMax ;
+%     
+%     q_test = -100;
+%     for s=1: length(q)
+%         if q == q_pk_tab(j,k)
+%             q_test = q;
+%         end
+%         if q < 0.9*q_test
+%             delta_theta_min_tab(j,k) = pitch(s);
+%             break
+%         end
+%     end
+%     disp(q_pk_tab(j,k))
+%     disp(delta_theta_pk_tab(j,k))
+%     disp(delta_theta_min_tab(j,k))
+%     pause
+%     hold on
 
-    q_pk_tab(j,k) = S2.SettlingMax ;
-    delta_theta_pk_tab(j,k) = S1.SettlingMax ;
-    
-    q_test = -100;
-    for s=1: length(q)
-        if q(s)*180/pi == q_pk_tab(j,k)
-            q_test = q(s);
-        end
-        if q(s) < 0.9*q_test
-            delta_theta_min_tab(j,k) = pitch(s)*180/pi;
-            break
-        end
+    drawnow;
+%     S1 = stepinfo(pitch*180/pi,t);
+%     S2 = stepinfo(q*180/pi,t);
+
+%     q_pk_tab(j,k) = S2.SettlingMax ;
+%     delta_theta_pk_tab(j,k) = S1.SettlingMax ;
+%     
+%     q_test = -100;
+%     for s=1: length(q)
+%         if q == q_pk_tab(j,k)
+%             q_test = q;
+%         end
+%         if q < 0.9*q_test
+%             delta_theta_min_tab(j,k) = pitch(s);
+%             break
+%         end
+%     end
+%     disp(q_pk_tab(j,k))
+%     disp(delta_theta_pk_tab(j,k))
+%     disp(delta_theta_min_tab(j,k))
     end
-    disp(q_pk_tab(j,k))
-    disp(q_test*180/pi)
-    disp(delta_theta_pk_tab(j,k))
-    disp(delta_theta_min_tab(j,k))
-    end
+    pause 
+
 end
